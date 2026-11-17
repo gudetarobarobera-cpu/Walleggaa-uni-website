@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Campus Portal</title>
+<style>
+:root{--paper:#f7f5f0;--card:#fff;--ink:#1c2233;--muted:#6b7185;--line:#e2dfd6;--navy:#22305a;--accent:#e0a526;--bad:#b3423a;--good:#2e7d57}
+*{box-sizing:border-box}
+body{margin:0;font-family:"IBM Plex Sans",system-ui,sans-serif;color:var(--ink);background:var(--paper);line-height:1.5}
+h1,h2,h3{font-family:"Fraunces",Georgia,serif;font-weight:600;margin:0 0 .5rem;line-height:1.2}
+button,input,select{font:inherit}
+button{cursor:pointer;border:0;border-radius:8px;padding:.55rem 1rem;background:var(--navy);color:#fff}
+button.ghost{background:none;color:var(--navy);border:1px solid var(--line)}
+button.sm{padding:.3rem .65rem;font-size:.9rem}
+button.bad{background:var(--bad)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+input,select{padding:.55rem .7rem;border:1px solid #cfcabd;border-radius:8px;background:#fff;color:var(--ink);width:100%}
+label{display:block;font-size:.9rem;color:var(--muted);margin-bottom:.7rem}
+label>input,label>select{margin-top:.25rem;color:var(--ink)}
+.hidden{display:none!important}
+.muted{color:var(--muted)}
+.err{color:var(--bad);font-size:.9rem;min-height:1.2rem}
+.ok{color:var(--good);font-size:.9rem}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:1.1rem;margin-bottom:1rem}
+.row{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+.spread{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.6rem;margin-bottom:1rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.9rem}
+.pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:.05rem .55rem;font-size:.8rem;margin:.3rem .3rem 0 0;background:var(--paper)}
+table{width:100%;border-collapse:collapse;background:var(--card)}
+th,td{text-align:left;padding:.5rem .6rem;border-bottom:1px solid var(--line)}
+th{font-size:.85rem;color:var(--muted);font-weight:500}
+.num{text-align:right}
+td input{padding:.3rem .45rem;width:auto}
+td input.n{width:90px;text-align:right}
+.wrap{overflow-x:auto}
+.big{font-family:"Fraunces",Georgia,serif;font-size:1.6rem;font-weight:600}
+.empty{color:var(--muted);text-align:center;padding:1.5rem;border:1px dashed #cfcabd;border-radius:10px}
+#auth{min-height:100vh;display:grid;place-items:center;padding:1.5rem}
+.auth-box{width:100%;max-width:420px}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:.35rem;background:#ebe8df;padding:.25rem;border-radius:10px;margin-bottom:1rem}
+.seg button{background:none;color:var(--muted);padding:.5rem .3rem;font-size:.92rem}
+.seg button[aria-pressed=true]{background:#fff;color:var(--navy);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+header.top{background:var(--navy);color:#fff;padding:.7rem 1.2rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;position:sticky;top:0;z-index:5}
+header.top .brand{font-family:"Fraunces",Georgia,serif;font-size:1.2rem;font-weight:600;margin-right:auto}
+header.top small{font-family:"IBM Plex Sans",sans-serif;font-weight:400;color:#c9cedd;margin-left:.5rem}
+nav.tabs{display:flex;gap:.2rem;flex-wrap:wrap}
+nav.tabs button{background:none;color:#c9cedd;padding:.4rem .8rem}
+nav.tabs button[aria-selected=true]{background:rgba(255,255,255,.14);color:#fff}
+header.top button.logout{background:none;border:1px solid rgba(255,255,255,.35);color:#fff;padding:.35rem .7rem}
+.av{width:40px;height:40px;border-radius:50%;background:var(--accent);color:var(--ink);display:grid;place-items:center;font-weight:600}
+main{max-width:1080px;margin:0 auto;padding:1.5rem 1.2rem 3rem}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.9rem;margin-bottom:1rem}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:.9rem 1rem}
+.stat .big{color:var(--navy)}
+.stat .muted{font-size:.9rem}
+.live{font-size:.8rem;color:#c9cedd}
+@media(max-width:700px){nav.tabs{order:3;width:100%}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<section id="auth">
+  <div class="auth-box">
+    <h1 style="font-size:2rem">Campus Portal</h1>
+    <p class="muted" style="margin-top:0">Grades and courses update live for everyone signed in.</p>
+    <div class="seg" role="group" aria-label="I am the">
+      <button type="button" data-role="student" aria-pressed="true">Student</button>
+      <button type="button" data-role="teacher" aria-pressed="false">Teacher</button>
+      <button type="button" data-role="owner" aria-pressed="false">Owner</button>
+    </div>
+    <h2 id="auth-title" style="font-size:1.4rem">Student sign in</h2>
+    <form id="auth-form" novalidate>
+      <div id="f-id-wrap">
+        <label><span id="f-id-label">Student ID (7 digits)</span>
+          <input id="f-id" inputmode="numeric" autocomplete="off"></label>
+      </div>
+      <div id="su-wrap" class="hidden">
+        <label>Full name<input id="f-name" autocomplete="name"></label>
+        <label>Program or department<input id="f-prog"></label>
+        <label id="f-year-wrap">Year you are applying to
+          <select id="f-year"><option value="1">Year 1</option><option value="2">Year 2</option><option value="3">Year 3</option><option value="4">Year 4</option><option value="5">Year 5</option></select>
+        </label>
+      </div>
+      <div id="f-pass-wrap" class="hidden">
+        <label>Owner password<input id="f-pass" type="password" autocomplete="current-password"></label>
+      </div>
+      <p class="err" id="auth-err" role="alert"></p>
+      <div class="row" style="flex-direction:column;align-items:stretch">
+        <button type="submit" id="auth-submit">Sign in</button>
+        <button type="button" class="ghost" id="auth-toggle">New here? Create an account</button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<div id="app" class="hidden">
+  <header class="top">
+    <div class="brand">Campus Portal<small id="role-label"></small></div>
+    <nav class="tabs" id="nav"></nav>
+    <span class="live" id="live">Connecting…</span>
+    <div class="av" id="av"></div>
+    <button class="logout" data-act="logout">Log out</button>
+  </header>
+  <main id="main">
+    <div id="v-s-courses" class="hidden"></div>
+    <div id="v-s-points" class="hidden"></div>
+    <div id="v-s-grades" class="hidden"></div>
+    <div id="v-t-courses" class="hidden"></div>
+    <div id="v-t-grades" class="hidden"></div>
+    <div id="v-o-req" class="hidden"></div>
+    <div id="v-o-teachers" class="hidden"></div>
+  </main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  const OWNER_PASSWORD = "robera";
+  const SESSION_KEY = "campusPortal.session";
+  // [minimum score, letter, grade point]
+  const SCALE = [[90,"A",4],[85,"A-",3.7],[80,"B+",3.3],[75,"B",3],[70,"B-",2.7],[65,"C+",2.3],[60,"C",2],[55,"C-",1.7],[50,"D",1],[0,"F",0]];
+
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const isDigits = (s, n) => new RegExp("^\\d{" + n + "}$").test(s);
+  const uid = () => "u" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  const clone = o => JSON.parse(JSON.stringify(o));
+  const letterOf = v => SCALE.find(s => v >= s[0]);
+  const yl = y => "Year " + y;
+  const byYC = (a, b) => a.year - b.year || a.code.localeCompare(b.code);
+
+  let db = null;
+  let S = { teachers: {}, students: {}, courses: {}, grades: {}, teacherApps: {} };
+  let sess = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
+  let aRole = "student", aMode = "in";
+  let view = null, cid = null, draft = [], draftFor = null;
+  let dirty = false;
+
+  /* ---------- Live data ---------- */
+  function sub(name) {
+    db.collection(name).onSnapshot(snap => {
+      const o = {};
+      (snap.docs || []).forEach(d => { if (d.exists) o[d.id] = d.data(); });
+      S[name] = o;
+      scheduleRender();
+    }, e => console.error(name, e));
+  }
+  async function put(col, id, data) {
+    try { await db.collection(col).doc(id).set(data); }
+    catch (e) { alert("Could not save. Please try again."); }
+  }
+  async function del(col, id) {
+    try { await db.collection(col).doc(id).delete(); }
+    catch (e) { alert("Could not delete. Please try again."); }
+  }
+  function scheduleRender() {
+    const a = document.activeElement;
+    if (a && $("main").contains(a) && a.tagName === "INPUT") { dirty = true; return; }
+    render();
+  }
+  $("main").addEventListener("focusout", () => setTimeout(() => {
+    const a = document.activeElement;
+    if (dirty && !(a && $("main").contains(a) && a.tagName === "INPUT")) { dirty = false; render(); }
+  }, 0));
+
+  function boot() {
+    if (!window.claude || !window.claude.use) { $("live").textContent = "Live data unavailable"; return; }
+    Promise.resolve(window.claude.use("db")).then(d => {
+      if (!d) { $("live").textContent = "Live data unavailable"; return; }
+      db = d;
+      $("live").textContent = "Live";
+      ["teachers", "students", "courses", "grades", "teacherApps"].forEach(sub);
+    });
+    setTimeout(() => { if (!db) $("live").textContent = "Still connecting. Check your connection."; }, 10000);
+  }
+
+  /* ---------- Grades ---------- */
+  function gradeOf(course, sid) {
+    const g = S.grades[course.id + "__" + sid];
+    const v = (g && g.values) || {};
+    let w = 0, s = 0, n = 0;
+    const total = course.components.reduce((a, c) => a + (+c.weight || 0), 0);
+    course.components.forEach(c => {
+      const x = v[c.id];
+      if (typeof x === "number") { s += x * (+c.weight || 0); w += (+c.weight || 0); n++; }
+    });
+    return { value: w > 0 ? s / w : null, done: total ? w / total : 0 };
+  }
+  const tname = id => (S.teachers[id] ? S.teachers[id].name : "Unknown teacher");
+  const myCourses = () => Object.values(S.courses).filter(c => c.teacherId === sess.id).sort(byYC);
+
+  /* ---------- Sign-in ---------- */
+  function renderAuth() {
+    const isT = aRole === "teacher", isO = aRole === "owner", isS = aRole === "student";
+    document.querySelectorAll("[data-role]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.role === aRole)));
+    $("f-id-wrap").classList.toggle("hidden", isO || (isT && aMode === "up"));
+    $("f-id-label").textContent = isT ? "Teacher ID (4 digits)" : "Student ID (7 digits)";
+    $("f-id").maxLength = isT ? 4 : 7;
+    $("f-pass-wrap").classList.toggle("hidden", !isO);
+    $("su-wrap").classList.toggle("hidden", isO || aMode === "in");
+    $("f-year-wrap").classList.toggle("hidden", !isS);
+    $("auth-toggle").classList.toggle("hidden", isO);
+    $("auth-submit").textContent = isO ? "Enter as owner" : aMode === "in" ? "Sign in" : (isT ? "Send request" : "Create account");
+    $("auth-toggle").textContent = aMode === "in" ? (isT ? "Request teacher access" : "New here? Create an account") : "Back to sign in";
+    $("auth-title").textContent = (isO ? "Owner" : isT ? "Teacher" : "Student") + (aMode === "in" || isO ? " sign in" : " account");
+    $("auth-err").textContent = "";
+  }
+  document.querySelectorAll("[data-role]").forEach(b => b.addEventListener("click", () => { aRole = b.dataset.role; aMode = "in"; renderAuth(); }));
+  $("auth-toggle").addEventListener("click", () => { aMode = aMode === "in" ? "up" : "in"; renderAuth(); });
+  $("f-id").addEventListener("input", e => { e.target.value = e.target.value.replace(/\D/g, "").slice(0, e.target.maxLength); });
+
+  $("auth-form").addEventListener("submit", async e => {
+    e.preventDefault();
+    const err = t => { $("auth-err").textContent = t; };
+    const id = $("f-id").value.trim();
+    const name = $("f-name").value.trim();
+    const prog = $("f-prog").value.trim();
+
+    if (aRole === "owner") {
+      if ($("f-pass").value !== OWNER_PASSWORD) { err("That password is not correct."); return; }
+      sess = { role: "owner", id: "owner" };
+      save(); enter(); return;
+    }
+    if (!db) { err("Still connecting to the portal. Try again in a moment."); return; }
+
+    if (aRole === "teacher") {
+      if (aMode === "in") {
+        if (!isDigits(id, 4)) { err("Teacher IDs are 4 digits."); return; }
+        if (!S.teachers[id]) { err("No approved teacher uses this ID. If you have not been approved yet, send a request."); return; }
+        sess = { role: "teacher", id: id };
+      } else {
+        if (!name) { err("Enter your name."); return; }
+        await put("teacherApps", uid(), { name: name, program: prog || "Teaching staff", status: "pending", createdAt: Date.now() });
+        aMode = "in"; renderAuth();
+        $("auth-err").className = "ok";
+        $("auth-err").textContent = "Request sent. The owner will give you a teacher ID once it is accepted.";
+        return;
+      }
+    } else {
+      if (!isDigits(id, 7)) { err("Student IDs are 7 digits."); return; }
+      if (aMode === "in") {
+        if (!S.students[id]) { err("No student account uses this ID. Create an account first."); return; }
+        sess = { role: "student", id: id };
+      } else {
+        if (!name) { err("Enter your name."); return; }
+        if (S.students[id] || S.teachers[id]) { err("This ID is already in use."); return; }
+        await put("students", id, { id: id, name: name, program: prog || "Undeclared", year: +$("f-year").value, status: "pending" });
+        sess = { role: "student", id: id };
+      }
+    }
+    $("auth-err").className = "err";
+    save(); enter();
+  });
+
+  function save() { localStorage.setItem(SESSION_KEY, JSON.stringify(sess)); }
+
+  $("main").addEventListener("click", e => {
+    const b = e.target.closest("[data-act]");
+    if (b) act(b.dataset.act, b.dataset);
+  });
+  $("app").addEventListener("click", e => {
+    const b = e.target.closest("[data-act='logout']");
+    if (b) act("logout", {});
+  });
+
+  /* ---------- Shell ---------- */
+  function enter() {
+    $("auth").classList.add("hidden");
+    $("app").classList.remove("hidden");
+    const names = { student: "Student portal", teacher: "Teacher portal", owner: "Owner" };
+    const tabs = {
+      student: [["s-courses", "Courses"], ["s-points", "Points"], ["s-grades", "Grades"]],
+      teacher: [["t-courses", "My courses"], ["t-grades", "Gradebook"]],
+      owner: [["o-req", "Teacher requests"], ["o-teachers", "Teachers"]]
+    }[sess.role];
+    $("role-label").textContent = names[sess.role];
+    $("nav").innerHTML = tabs.map(([v, l]) => '<button data-view="' + v + '" aria-selected="false">' + l + '</button>').join("");
+    $("nav").querySelectorAll("button").forEach(b => b.addEventListener("click", () => showView(b.dataset.view)));
+    const who = sess.role === "owner" ? "O" : initialsOf(sess.role === "teacher" ? S.teachers[sess.id] : S.students[sess.id]);
+    $("av").textContent = who || "?";
+    showView(tabs[0][0]);
+  }
+  function initialsOf(rec) {
+    if (!rec || !rec.name) return "";
+    return rec.name.trim().split(/\s+/).slice(0, 2).map(p => p[0].toUpperCase()).join("");
+  }
+  function showView(v) {
+    view = v;
+    ["s-courses","s-points","s-grades","t-courses","t-grades","o-req","o-teachers"].forEach(x => $("v-" + x).classList.toggle("hidden", x !== v));
+    $("nav").querySelectorAll("button").forEach(b => b.setAttribute("aria-selected", String(b.dataset.view === v)));
+    render();
+  }
+  function render() {
+    if (!sess) return;
+    const fns = { "s-courses": rStudentCourses, "s-points": rPoints, "s-grades": rStudentGrades, "t-courses": rTeacherCourses, "t-grades": rGradebook, "o-req": rOwnerRequests, "o-teachers": rOwnerTeachers };
+    if (fns[view]) $("v-" + view).innerHTML = fns[view]();
+    if (sess && sess.role !== "owner") $("av").textContent = initialsOf(sess.role === "teacher" ? S.teachers[sess.id] : S.students[sess.id]) || "?";
+  }
+
+  function logout() {
+    sess = null;
+    localStorage.removeItem(SESSION_KEY);
+    $("app").classList.add("hidden");
+    $("auth").classList.remove("hidden");
+    $("f-id").value = ""; $("auth-err").textContent = "";
+    renderAuth();
+  }
+
+  /* ---------- Student views ---------- */
+  function rStudentCourses() {
+    const me = S.students[sess.id] || {};
+    let h = "";
+    if (me.status === "pending") h += '<div class="card">Your application for ' + yl(me.year) + ' is waiting for a teacher to accept it. Your courses appear here once you are accepted.</div>';
+    if (me.status === "declined") h += '<div class="card err">Your application was declined. Please contact your department.</div>';
+    const list = Object.values(S.courses).filter(c => c.studentIds.includes(sess.id)).sort(byYC);
+    if (!list.length) return h + '<div class="empty">No courses yet.</div>';
+    return h + '<div class="grid">' + list.map(c => {
+      const g = gradeOf(c, sess.id);
+      const grade = g.value == null ? "No grade yet" : g.value.toFixed(1) + "% · " + letterOf(g.value)[1];
+      return '<div class="card"><div class="muted" style="font-family:monospace">' + esc(c.code) + '</div>' +
+        '<h3>' + esc(c.title) + '</h3><div class="muted">' + esc(tname(c.teacherId)) + ' · ' + esc(c.schedule) + '</div>' +
+        '<span class="pill">' + yl(c.year) + '</span><span class="pill">' + c.credits + ' credits</span>' +
+        '<div style="margin-top:.5rem">' + grade + '</div></div>';
+    }).join("") + '</div>';
+  }
+
+  function studentRows() {
+    return Object.values(S.courses).filter(c => c.studentIds.includes(sess.id)).sort(byYC).map(c => ({ c: c, g: gradeOf(c, sess.id) }));
+  }
+
+  function rPoints() {
+    const rows = studentRows().map(r => {
+      const L = r.g.value == null ? null : letterOf(r.g.value);
+      return { c: r.c, L: L, pts: L ? L[2] * r.c.credits : null };
+    });
+    const graded = rows.filter(r => r.L);
+    const credits = graded.reduce((a, r) => a + r.c.credits, 0);
+    const points = graded.reduce((a, r) => a + r.pts, 0);
+    const earned = graded.filter(r => r.L[2] > 0).reduce((a, r) => a + r.c.credits, 0);
+    const total = rows.reduce((a, r) => a + r.c.credits, 0);
+    return '<div class="stats">' +
+      '<div class="stat"><div class="big">' + (credits ? (points / credits).toFixed(2) : "-") + '</div><div class="muted">Grade point average</div></div>' +
+      '<div class="stat"><div class="big">' + (graded.length ? points.toFixed(1) : "-") + '</div><div class="muted">Total points</div></div>' +
+      '<div class="stat"><div class="big">' + earned + ' / ' + total + '</div><div class="muted">Credits earned</div></div></div>' +
+      '<div class="wrap"><table><thead><tr><th>Course</th><th>Year</th><th class="num">Credits</th><th class="num">Grade</th><th class="num">Grade point</th><th class="num">Points</th></tr></thead><tbody>' +
+      (rows.length ? rows.map(r => '<tr><td><strong>' + esc(r.c.code) + '</strong> ' + esc(r.c.title) + '</td><td>' + yl(r.c.year) + '</td><td class="num">' + r.c.credits + '</td><td class="num">' + (r.L ? r.L[1] : "-") + '</td><td class="num">' + (r.L ? r.L[2].toFixed(1) : "-") + '</td><td class="num">' + (r.pts == null ? "-" : r.pts.toFixed(1)) + '</td></tr>').join("")
+        : '<tr><td colspan="6" class="empty">No courses yet.</td></tr>') +
+      '</tbody></table></div>';
+  }
+
+  function rStudentGrades() {
+    const rows = studentRows();
+    if (!rows.length) return '<div class="empty">No courses yet.</div>';
+    return rows.map(r => {
+      const sc = (S.grades[r.c.id + "__" + sess.id] || {}).values || {};
+      const items = r.c.components.map(comp => '<tr><td>' + esc(comp.name) + '</td><td class="num">' + comp.weight + '%</td><td class="num">' +
+        (typeof sc[comp.id] === "number" ? sc[comp.id] : '<span class="muted">Not posted</span>') + '</td></tr>').join("");
+      return '<div class="card"><div class="spread"><div><div class="muted" style="font-family:monospace">' + esc(r.c.code) + ' · ' + yl(r.c.year) + '</div><h3 style="margin:0">' + esc(r.c.title) + '</h3></div>' +
+        '<div class="big">' + (r.g.value == null ? "No grade yet" : r.g.value.toFixed(1) + "% · " + letterOf(r.g.value)[1]) + '</div></div>' +
+        '<div class="wrap"><table><thead><tr><th>Assessment</th><th class="num">Weight</th><th class="num">Score</th></tr></thead><tbody>' + items + '</tbody></table></div></div>';
+    }).join("");
+  }
+
+  /* ---------- Teacher views ---------- */
+  function rTeacherCourses() {
+    const list = myCourses();
+    const cards = list.length ? '<div class="grid">' + list.map(c =>
+      '<div class="card"><div class="muted" style="font-family:monospace">' + esc(c.code) + '</div><h3>' + esc(c.title) + '</h3>' +
+      '<div class="muted">' + esc(c.schedule) + '</div><span class="pill">' + yl(c.year) + '</span><span class="pill">' + c.credits + ' credits</span>' +
+      '<span class="pill">' + c.studentIds.length + ' students</span><div class="row" style="margin-top:.7rem">' +
+      '<button class="sm" data-act="open-gb" data-id="' + c.id + '">Gradebook</button>' +
+      '<button class="sm ghost" data-act="del-course" data-id="' + c.id + '">Delete</button></div></div>').join("") + '</div>'
+      : '<div class="empty">You have no courses yet. Add one below.</div>';
+    return '<div class="spread"><h2 style="margin:0">My courses</h2></div>' + cards +
+      '<div class="card" style="margin-top:1rem"><h3>New course</h3><div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr))">' +
+      '<label>Code<input id="t-code" placeholder="CS201"></label>' +
+      '<label>Name<input id="t-title" placeholder="Data Structures"></label>' +
+      '<label>Year<select id="t-year">' + [1,2,3,4,5].map(y => '<option value="' + y + '">' + yl(y) + '</option>').join("") + '</select></label>' +
+      '<label>Credits<input id="t-cr" type="number" min="1" max="10" value="3"></label>' +
+      '<label>Schedule<input id="t-sched" placeholder="Mon / Wed 10:00"></label></div>' +
+      '<button data-act="add-course">Add course</button></div>';
+  }
+
+  function rGradebook() {
+    const list = myCourses();
+    if (!list.length) return '<div class="empty">You have no courses yet. Add one from My courses.</div>';
+    if (!cid || !S.courses[cid] || S.courses[cid].teacherId !== sess.id) cid = list[0].id;
+    const c = S.courses[cid];
+    if (draftFor !== cid) { draft = clone(c.components); draftFor = cid; }
+    const total = draft.reduce((a, d) => a + (+d.w || 0), 0);
+    const years = list.map(x => x.year);
+    const applicants = Object.values(S.students).filter(s => s.status === "pending" && years.includes(s.year));
+    const roster = c.studentIds.map(id => S.students[id]).filter(Boolean).sort((a, b) => a.name.localeCompare(b.name));
+
+    const picker = '<label>Course<select id="pick">' + list.map(x =>
+      '<option value="' + x.id + '"' + (x.id === cid ? " selected" : "") + '>' + esc(x.code + " · " + x.title + " (" + yl(x.year) + ")") + '</option>').join("") + '</select></label>';
+
+    const assess = '<div class="card"><h3>Assessments</h3><p class="muted" style="margin-top:0">Choose how the grade is built. Weights should total 100%.</p>' +
+      '<div class="wrap"><table><thead><tr><th>Name</th><th class="num">Weight (%)</th><th></th></tr></thead><tbody>' +
+      (draft.length ? draft.map((d, i) => '<tr><td><input data-d="name" data-i="' + i + '" value="' + esc(d.name) + '"></td>' +
+        '<td class="num"><input class="n" type="number" min="0" max="100" data-d="w" data-i="' + i + '" value="' + d.w + '"></td>' +
+        '<td class="num"><button class="ghost sm" data-act="rm-assess" data-i="' + i + '">Remove</button></td></tr>').join("")
+        : '<tr><td colspan="3" class="muted">No assessments yet.</td></tr>') +
+      '</tbody></table></div>' +
+      '<div class="row" style="margin-top:.7rem"><button class="ghost sm" data-act="add-assess">Add assessment</button>' +
+      '<span id="tot">Total: ' + total + '%</span>' + (total !== 100 ? '<span style="color:#8a5a00">Should total 100%.</span>' : "") +
+      '<button class="sm" data-act="save-assess" style="margin-left:auto">Save assessments</button></div></div>';
+
+    const apps = '<div class="card"><h3>Student applications</h3>' + (applicants.length
+      ? applicants.map(s => '<div class="row spread" style="margin-bottom:.5rem"><span>' + esc(s.name) + ' <span class="muted">· ID ' + esc(s.id) + ' · applying for ' + yl(s.year) + '</span></span>' +
+          '<span class="row"><button class="sm" data-act="acc-stu" data-id="' + s.id + '">Accept</button><button class="sm ghost" data-act="dec-stu" data-id="' + s.id + '">Decline</button></span></div>').join("")
+      : '<p class="muted" style="margin:0">No pending applications for your years.</p>') + '</div>';
+
+    const rost = '<div class="card"><h3>Students in this course</h3>' +
+      '<div class="row" style="margin-bottom:.7rem"><input id="r-id" inputmode="numeric" maxlength="7" placeholder="Student ID" style="width:200px"><button class="sm" data-act="add-stu">Add student</button></div>' +
+      '<div class="wrap"><table><thead><tr><th>Name</th><th>ID</th><th></th></tr></thead><tbody>' +
+      (roster.length ? roster.map(s => '<tr><td>' + esc(s.name) + '</td><td>' + esc(s.id) + '</td><td class="num"><button class="ghost sm" data-act="rm-stu" data-id="' + s.id + '">Remove</button></td></tr>').join("")
+        : '<tr><td colspan="3" class="muted">No students yet.</td></tr>') + '</tbody></table></div></div>';
+
+    const head = '<tr><th>Student</th>' + c.components.map(x => '<th class="num">' + esc(x.name) + ' (' + x.weight + '%)</th>').join("") + '<th class="num">Grade</th></tr>';
+    const body = roster.length ? roster.map(s => {
+      const g = gradeOf(c, s.id);
+      const sc = (S.grades[c.id + "__" + s.id] || {}).values || {};
+      return '<tr><td>' + esc(s.name) + '</td>' + c.components.map(x =>
+        '<td class="num"><input class="n" type="number" min="0" max="100" step="0.5" data-grade="1" data-sid="' + s.id + '" data-course="' + c.id + '" data-cid="' + x.id + '" value="' + (typeof sc[x.id] === "number" ? sc[x.id] : "") + '"></td>').join("") +
+        '<td class="num">' + (g.value == null ? "-" : g.value.toFixed(1) + "% " + letterOf(g.value)[1]) + '</td></tr>';
+    }).join("") : '';
+    const scores = '<div class="card"><h3>Scores</h3><p class="muted" style="margin-top:0">Enter 0 to 100. Changes save and show for everyone live.</p>' +
+      (c.components.length && roster.length
+        ? '<div class="wrap"><table><thead>' + head + '</thead><tbody>' + body + '</tbody></table></div>'
+        : '<p class="muted" style="margin:0">' + (c.components.length ? "Add students to enter scores." : "Add assessments first.") + '</p>') + '</div>';
+
+    return picker + apps + assess + rost + scores;
+  }
+
+  /* ---------- Owner views ---------- */
+  function rOwnerRequests() {
+    const apps = Object.entries(S.teacherApps).map(([id, a]) => Object.assign({ _id: id }, a));
+    const pending = apps.filter(a => a.status === "pending");
+    const done = apps.filter(a => a.status !== "pending");
+    return '<h2>Teacher requests</h2>' +
+      (pending.length ? pending.map(a => '<div class="card row spread"><div><strong>' + esc(a.name) + '</strong><div class="muted">' + esc(a.program) + '</div></div>' +
+        '<div class="row"><button class="sm" data-act="own-acc" data-id="' + a._id + '">Accept and assign ID</button><button class="sm ghost" data-act="own-dec" data-id="' + a._id + '">Decline</button></div></div>').join("")
+        : '<div class="empty">No pending requests.</div>') +
+      (done.length ? '<h3 style="margin-top:1.5rem">Decided</h3>' + done.map(a => '<div class="card row spread"><div>' + esc(a.name) +
+        (a.status === "accepted" ? ' <span class="pill">Teacher ID ' + esc(a.teacherId) + '</span>' : ' <span class="muted">declined</span>') + '</div></div>').join("") : "");
+  }
+
+  function rOwnerTeachers() {
+    const list = Object.values(S.teachers).sort((a, b) => a.name.localeCompare(b.name));
+    return '<h2>Teachers</h2>' + (list.length
+      ? '<div class="wrap"><table><thead><tr><th>Name</th><th>Teacher ID</th><th>Program</th><th></th></tr></thead><tbody>' +
+        list.map(t => '<tr><td>' + esc(t.name) + '</td><td>' + esc(t.id) + '</td><td>' + esc(t.program) + '</td><td class="num"><button class="ghost sm" data-act="own-rm" data-id="' + t.id + '">Remove</button></td></tr>').join("") +
+        '</tbody></table></div>'
+      : '<div class="empty">No teachers yet. Accept a request to give a teacher an ID.</div>');
+  }
+
+  /* ---------- Actions ---------- */
+  async function act(a, d) {
+    switch (a) {
+      case "logout": logout(); return;
+      case "open-gb": cid = d.id; showView("t-grades"); return;
+      case "del-course":
+        if (confirm("Delete this course and its scores?")) await del("courses", d.id);
+        return;
+      case "add-course": {
+        const code = $("t-code").value.trim(), title = $("t-title").value.trim(), cr = +$("t-cr").value;
+        if (!code || !title) { alert("Course code and name are required."); return; }
+        if (!(cr >= 1 && cr <= 10)) { alert("Credits must be between 1 and 10."); return; }
+        const id = uid();
+        await put("courses", id, { id: id, code: code, title: title, year: +$("t-year").value, credits: cr,
+          schedule: $("t-sched").value.trim() || "TBA", teacherId: sess.id,
+          components: [{ id: uid(), name: "Final exam", weight: 100 }], studentIds: [] });
+        cid = id; showView("t-grades");
+        return;
+      }
+      case "add-assess": draft.push({ id: uid(), name: "New assessment", w: 0 }); render(); return;
+      case "rm-assess": draft.splice(+d.i, 1); render(); return;
+      case "save-assess": {
+        const c = S.courses[cid];
+        if (!draft.length) { alert("Add at least one assessment."); return; }
+        if (draft.some(x => !x.name.trim())) { alert("Every assessment needs a name."); return; }
+        await put("courses", cid, Object.assign({}, c, {
+          components: draft.map(x => ({ id: x.id, name: x.name.trim(), weight: +x.w || 0 })) }));
+        draftFor = null;
+        return;
+      }
+      case "acc-stu": {
+        const st = S.students[d.id];
+        if (!st) return;
+        await put("students", d.id, Object.assign({}, st, { status: "active" }));
+        const ids = Object.values(S.courses).filter(c => c.year === st.year).map(c => c.id);
+        for (const id of ids) {
+          const c = S.courses[id];
+          if (!c.studentIds.includes(d.id)) await put("courses", id, Object.assign({}, c, { studentIds: c.studentIds.concat([d.id]) }));
+        }
+        return;
+      }
+      case "dec-stu": {
+        const st = S.students[d.id];
+        if (st) await put("students", d.id, Object.assign({}, st, { status: "declined" }));
+        return;
+      }
+      case "add-stu": {
+        const id = $("r-id").value.trim();
+        const c = S.courses[cid];
+        if (!isDigits(id, 7)) { alert("A student ID is exactly 7 digits."); return; }
+        if (!S.students[id]) { alert("No student has this ID yet."); return; }
+        if (c.studentIds.includes(id)) { alert("This student is already in the course."); return; }
+        await put("courses", cid, Object.assign({}, c, { studentIds: c.studentIds.concat([id]) }));
+        $("r-id").value = "";
+        return;
+      }
+      case "rm-stu": {
+        const c = S.courses[cid];
+        if (!confirm("Remove this student from the course?")) return;
+        await put("courses", cid, Object.assign({}, c, { studentIds: c.studentIds.filter(x => x !== d.id) }));
+        return;
+      }
+      case "own-acc": {
+        const app = S.teacherApps[d.id];
+        if (!app) return;
+        let tid;
+        do { tid = String(1000 + Math.floor(Math.random() * 9000)); } while (S.teachers[tid]);
+        await put("teachers", tid, { id: tid, name: app.name, program: app.program });
+        await put("teacherApps", d.id, Object.assign({}, app, { status: "accepted", teacherId: tid }));
+        return;
+      }
+      case "own-dec": {
+        const app = S.teacherApps[d.id];
+        if (app) await put("teacherApps", d.id, Object.assign({}, app, { status: "declined" }));
+        return;
+      }
+      case "own-rm":
+        if (confirm("Remove this teacher's access?")) await del("teachers", d.id);
+        return;
+    }
+  }
+
+  /* ---------- Input handling ---------- */
+  $("main").addEventListener("change", e => {
+    if (e.target.id === "pick") { cid = e.target.value; draftFor = null; render(); }
+  });
+  $("main").addEventListener("input", async e => {
+    const t = e.target, d = t.dataset;
+    if (d.grade !== undefined) {
+      const key = d.course + "__" + d.sid;
+      const cur = Object.assign({}, (S.grades[key] && S.grades[key].values) || {});
+      if (t.value === "" || isNaN(+t.value)) delete cur[d.cid];
+      else cur[d.cid] = Math.min(100, Math.max(0, +t.value));
+      await put("grades", key, { courseId: d.course, studentId: d.sid, values: cur });
+    } else if (d.d) {
+      const row = draft[+d.i];
+      if (!row) return;
+      if (d.d === "name") row.name = t.value; else row.w = +t.value || 0;
+      const el = $("tot");
+      if (el) el.textContent = "Total: " + draft.reduce((a, x) => a + (+x.w || 0), 0) + "%";
+    }
+  });
+
+  /* ---------- Boot ---------- */
+  renderAuth();
+  boot();
+  if (sess) enter();
+})();
+</script>
+</body>
+</html>
